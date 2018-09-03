@@ -1,0 +1,35 @@
+# Template Ignore
+
+*.egg-info
+*.pyc
+*.pyo
+/.coverage
+/.coveragerc
+/.installed.cfg
+/.isort.cfg
+/.mr.developer.cfg
+/.undodir/
+/README.html
+/Session.vim
+/bin/*
+/buildout-picked.cfg
+/buildout/develop-eggs/
+/buildout/eggs/
+/buildout/local.cfg
+# /buildout.cfg
+/buildout/parts/
+/buildout/py/
+/buildout/src/
+/frontend/node_modules/
+/htmlcov/
+/var/
+
+# Template Exceptions
+
+!/bin/bootstrap
+!/bin/build
+
+# Package Ingore
+
+/*.ini
+/*id_rsa*

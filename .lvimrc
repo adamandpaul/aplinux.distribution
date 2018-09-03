@@ -1,0 +1,4 @@
+set tabstop=4
+set shiftwidth=4
+set expandtab
+set wildignore=*.pyc,*.pyo,*/__pycache__/*,*/.git/*,*/buildout/develop-eggs/*,*/buildout/eggs/*,*/buildout/parts/*,*/buildout/py/*,*/htmlcov/*,*/var/*,*/bin/*

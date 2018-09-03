@@ -1,0 +1,3 @@
+# A blank buildout template. For use for coping to
+# local.cfg which can be overriden for particular builds
+[buildout]

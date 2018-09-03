@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+echo "bootstraping develop build (let's be bleeding edge)..."
+set -x
+
+BUILDOUT_DIR=`dirname "$0"`/..
+
+# Only overwrite the local.cfg if it is not presently there
+test -f buildout/local.cfg || cp buildout/local.cfg.in buildout/local.cfg
+
+# Create virtual environment upgrade pip and install setuptools and zc.buildout
+python3 -m venv buildout/py
+buildout/py/bin/pip install -U pip
+buildout/py/bin/pip install -U setuptools
+buildout/py/bin/easy_install -U zc.buildout
+
+# Pull sources first before first buildout
+buildout/py/bin/buildout -N install mr.developer
+bin/develop update

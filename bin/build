@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+echo 'building...'
+
+# Set the prepeend the bin dir to the path
+SCRIPT=$(readlink -f "$0")
+BIN_DIR=$(dirname "$SCRIPT")
+export PATH=$BIN_DIR:$PATH
+
+# Set the source commit
+export SOURCE_COMMIT=`git rev-parse HEAD`
+
+set -x
+exec buildout/py/bin/buildout "$@"
