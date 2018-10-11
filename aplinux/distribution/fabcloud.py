@@ -25,8 +25,19 @@ class TemporyNodeManager(object):
         self.driver = driver
         self.node_kwargs = kwargs
         self.node = None
+        self.fabric = None
 
     def start(self):
         """Starts the tempory node. Return once the node is considered running"""
         self.node = self.driver.create_node(**self.node_kwargs)
         self.driver.wait_until_running(self.node)
+
+    _ip_address = None
+
+    @property
+    def ip_address(self):
+        if self._ip_address is None:
+            ip_addresses = self.node.public_ips + self.node.private_ips
+            if len(ip_addresses) > 0:
+                self._ip_address = ip_addresses[0]
+        return self._ip_address

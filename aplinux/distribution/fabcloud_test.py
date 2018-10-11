@@ -14,6 +14,7 @@ class TestTemporyNodeInit(TestCase):
         self.assertEqual(node_manager.driver, driver)
         self.assertEqual(node_manager.node_kwargs, node_kwargs)
         self.assertIsNone(node_manager.node)
+        self.assertIsNone(node_manager.fabric)
 
 
 class TestSimpleTemporyNodePreStart(TestCase):
@@ -29,3 +30,18 @@ class TestSimpleTemporyNodePreStart(TestCase):
         expected_node = self.driver.create_node.return_value
         self.assertEqual(self.node_manager.node, expected_node)
         self.driver.wait_until_running.assert_called_with(expected_node)
+
+
+class TestSimpleTemporyNodeRunning(TestCase):
+
+    def setUp(self):
+        self.driver = MagicMock()
+        self.node_kwargs = {'image': 'foo'}
+        self.node_manager = fabcloud.TemporyNodeManager(self.driver, **self.node_kwargs)
+        self.node = MagicMock()
+        self.node_manager.node = self.node
+
+    def test_ip_address(self):
+        self.node.public_ips = ['111.222.333.444']
+        self.node.private_ips = ['192.168.0.111']
+        self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
