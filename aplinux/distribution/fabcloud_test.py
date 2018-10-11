@@ -28,3 +28,4 @@ class TestSimpleTemporyNodePreStart(TestCase):
         self.driver.create_node.assert_called_with(**self.node_kwargs)
         expected_node = self.driver.create_node.return_value
         self.assertEqual(self.node_manager.node, expected_node)
+        self.driver.wait_until_running.assert_called_with(expected_node)

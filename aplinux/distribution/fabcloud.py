@@ -27,5 +27,6 @@ class TemporyNodeManager(object):
         self.node = None
 
     def start(self):
-        """Starts the tempory node"""
+        """Starts the tempory node. Return once the node is considered running"""
         self.node = self.driver.create_node(**self.node_kwargs)
+        self.driver.wait_until_running(self.node)
