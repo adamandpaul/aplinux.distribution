@@ -9,5 +9,7 @@ class TestTemporyNode(TestCase):
 
     def test_init(self):
         driver = MagicMock()
-        node = fabcloud.TemporyNode(driver)
+        node_kwargs = {'image': 'foo', 'size': 'blah'}
+        node = fabcloud.TemporyNode(driver, **node_kwargs)
         self.assertEqual(node.driver, driver)
+        self.assertEqual(node.node_kwargs, node_kwargs)

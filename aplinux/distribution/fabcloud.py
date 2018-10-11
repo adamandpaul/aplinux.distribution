@@ -18,6 +18,7 @@ class TemporyNode(object):
         driver: A libcloud cloud driver
     """
 
-    def __init__(self, driver):
+    def __init__(self, driver, **kwargs):
         """Initialize the tempory node"""
         self.driver = driver
+        self.node_kwargs = kwargs
