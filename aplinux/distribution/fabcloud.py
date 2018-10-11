@@ -4,8 +4,9 @@
 Creating a tempory instance such as::
 
     >>> with TemporyNodeManager(driver,
-                         image=image,
-                         size=image) as node_manager:
+                                key_pair,
+                                image=image,
+                                size=image) as node_manager:
     >>>     node_manager.fabric.run('echo hello')
 
 """
@@ -20,9 +21,10 @@ class TemporyNodeManager(object):
         node: The libcloud node or None if it hasn't been created
     """
 
-    def __init__(self, driver, **kwargs):
+    def __init__(self, driver, key_pair, **kwargs):
         """Initialize the tempory node"""
         self.driver = driver
+        self.key_pair = key_pair
         self.node_kwargs = kwargs
         self.node = None
         self.fabric = None

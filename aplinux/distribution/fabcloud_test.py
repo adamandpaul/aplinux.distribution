@@ -9,9 +9,11 @@ class TestTemporyNodeInit(TestCase):
 
     def test_init(self):
         driver = MagicMock()
+        key_pair = MagicMock()
         node_kwargs = {'image': 'foo', 'size': 'blah'}
-        node_manager = fabcloud.TemporyNodeManager(driver, **node_kwargs)
+        node_manager = fabcloud.TemporyNodeManager(driver, key_pair, **node_kwargs)
         self.assertEqual(node_manager.driver, driver)
+        self.assertEqual(node_manager.key_pair, key_pair)
         self.assertEqual(node_manager.node_kwargs, node_kwargs)
         self.assertIsNone(node_manager.node)
         self.assertIsNone(node_manager.fabric)
@@ -21,8 +23,9 @@ class TestSimpleTemporyNodePreStart(TestCase):
 
     def setUp(self):
         self.driver = MagicMock()
+        key_pair = MagicMock()
         self.node_kwargs = {'image': 'foo'}
-        self.node_manager = fabcloud.TemporyNodeManager(self.driver, **self.node_kwargs)
+        self.node_manager = fabcloud.TemporyNodeManager(self.driver, key_pair, **self.node_kwargs)
 
     def test_tempory_node_start(self):
         self.node_manager.start()
@@ -36,8 +39,9 @@ class TestSimpleTemporyNodeRunning(TestCase):
 
     def setUp(self):
         self.driver = MagicMock()
+        key_pair = MagicMock()
         self.node_kwargs = {'image': 'foo'}
-        self.node_manager = fabcloud.TemporyNodeManager(self.driver, **self.node_kwargs)
+        self.node_manager = fabcloud.TemporyNodeManager(self.driver, key_pair, **self.node_kwargs)
         self.node = MagicMock()
         self.node_manager.node = self.node
 
