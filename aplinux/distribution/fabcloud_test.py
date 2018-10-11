@@ -13,3 +13,4 @@ class TestTemporyNode(TestCase):
         node_manager = fabcloud.TemporyNodeManager(driver, **node_kwargs)
         self.assertEqual(node_manager.driver, driver)
         self.assertEqual(node_manager.node_kwargs, node_kwargs)
+        self.assertIsNone(node_manager.node)

@@ -16,9 +16,11 @@ class TemporyNodeManager(object):
 
     Attributes:
         driver: A libcloud cloud driver
+        node: The libcloud node or None if it hasn't been created
     """
 
     def __init__(self, driver, **kwargs):
         """Initialize the tempory node"""
         self.driver = driver
         self.node_kwargs = kwargs
+        self.node = None
