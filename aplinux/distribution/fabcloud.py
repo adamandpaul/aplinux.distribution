@@ -5,8 +5,8 @@ Creating a tempory instance such as::
 
     >>> with TemporyNodeManager(driver,
                          image=image,
-                         size=image) as node:
-    >>>     node.fabric.run('echo hello')
+                         size=image) as node_manager:
+    >>>     node_manager.fabric.run('echo hello')
 
 """
 
