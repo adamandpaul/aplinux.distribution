@@ -13,4 +13,11 @@ Creating a tempory instance such as::
 
 class TemporyNode(object):
     """A tempory instance context object which is destroyed when the context exits
+
+    Attributes:
+        driver: A libcloud cloud driver
     """
+
+    def __init__(self, driver):
+        """Initialize the tempory node"""
+        self.driver = driver
