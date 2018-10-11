@@ -16,6 +16,7 @@ class TemporyNodeManager(object):
 
     Attributes:
         driver: A libcloud cloud driver
+        node_kwargs: The kwargs passed to the create_node method
         node: The libcloud node or None if it hasn't been created
     """
 
