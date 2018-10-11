@@ -3,7 +3,7 @@
 
 Creating a tempory instance such as::
 
-    >>> with TemporyNode(driver,
+    >>> with TemporyNodeManager(driver,
                          image=image,
                          size=image) as node:
     >>>     node.fabric.run('echo hello')
@@ -11,7 +11,7 @@ Creating a tempory instance such as::
 """
 
 
-class TemporyNode(object):
+class TemporyNodeManager(object):
     """A tempory instance context object which is destroyed when the context exits
 
     Attributes:
