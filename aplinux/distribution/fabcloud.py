@@ -11,6 +11,8 @@ Creating a tempory instance such as::
 
 """
 
+import fabric
+
 
 class TemporyNodeManager(object):
     """A tempory instance context object which is destroyed when the context exits
@@ -27,7 +29,6 @@ class TemporyNodeManager(object):
         self.key_pair = key_pair
         self.node_kwargs = kwargs
         self.node = None
-        self.fabric = None
 
     def start(self):
         """Starts the tempory node. Return once the node is considered running"""
@@ -38,8 +39,16 @@ class TemporyNodeManager(object):
 
     @property
     def ip_address(self):
-        if self._ip_address is None:
+        if self._ip_address is None and self.node is not None:
             ip_addresses = self.node.public_ips + self.node.private_ips
             if len(ip_addresses) > 0:
                 self._ip_address = ip_addresses[0]
         return self._ip_address
+
+    _fabric = None
+
+    @property
+    def fabric(self):
+        if self._fabric is None and self.ip_address is not None:
+            self._fabric = fabric.Connection(self.ip_address)
+        return self._fabric

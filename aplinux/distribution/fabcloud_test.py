@@ -3,6 +3,7 @@
 from . import fabcloud
 from unittest import TestCase
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 
 class TestTemporyNodeInit(TestCase):
@@ -17,6 +18,7 @@ class TestTemporyNodeInit(TestCase):
         self.assertEqual(node_manager.node_kwargs, node_kwargs)
         self.assertIsNone(node_manager.node)
         self.assertIsNone(node_manager.fabric)
+        self.assertIsNone(node_manager.ip_address)
 
 
 class TestSimpleTemporyNodePreStart(TestCase):
@@ -43,9 +45,14 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.node_kwargs = {'image': 'foo'}
         self.node_manager = fabcloud.TemporyNodeManager(self.driver, key_pair, **self.node_kwargs)
         self.node = MagicMock()
+        self.node.public_ips = ['111.222.333.444']
+        self.node.private_ips = ['192.168.0.111']
         self.node_manager.node = self.node
 
     def test_ip_address(self):
-        self.node.public_ips = ['111.222.333.444']
-        self.node.private_ips = ['192.168.0.111']
         self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
+
+    @patch('fabric.Connection')
+    def test_fabric(self, Connection):  # noqa: N803 arg name should be lower case
+        connection = self.node_manager.fabric
+        self.assertEqual(connection, Connection.return_value)
