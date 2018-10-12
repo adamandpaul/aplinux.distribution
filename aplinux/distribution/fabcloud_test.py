@@ -49,6 +49,14 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.node.private_ips = ['192.168.0.111']
         self.node_manager.node = self.node
 
+    def test_refresh_node(self):
+        other_node = MagicMock()
+        fresh_node = MagicMock()
+        fresh_node.id = self.node.id
+        self.node.driver.list_nodes.return_value = [other_node, fresh_node]
+        self.node_manager.refresh_node()
+        self.assertEqual(self.node_manager.node, fresh_node)
+
     def test_ip_address(self):
         self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
 

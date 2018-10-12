@@ -35,6 +35,14 @@ class TemporyNodeManager(object):
         self.node = self.driver.create_node(**self.node_kwargs)
         self.driver.wait_until_running(self.node)
 
+    def refresh_node(self):
+        """Refresh the node from the node's driver"""
+        node_id = self.node.id
+        for node in self.node.driver.list_nodes():
+            if node.id == node_id:
+                self.node = node
+                return
+
     _ip_address = None
 
     @property
