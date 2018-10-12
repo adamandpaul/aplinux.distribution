@@ -43,9 +43,9 @@ class TestSimpleTemporyNodeRunning(TestCase):
 
     def setUp(self):
         self.driver = MagicMock()
-        key_pair = MagicMock()
+        self.key_pair = MagicMock()
         self.node_kwargs = {'image': 'foo'}
-        self.node_manager = fabcloud.TemporyNodeManager(self.driver, key_pair, **self.node_kwargs)
+        self.node_manager = fabcloud.TemporyNodeManager(self.driver, self.key_pair, **self.node_kwargs)
         self.node = MagicMock()
         self.node.public_ips = ['111.222.333.444']
         self.node.private_ips = ['192.168.0.111']
@@ -72,6 +72,10 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
 
     @patch('fabric.Connection')
-    def test_fabric(self, Connection):  # noqa: N803 arg name should be lower case
+    @patch('paramiko.RSAKey')
+    def test_fabric(self, RSAKey, Connection):  # noqa: N803 arg name should be lower case
+        self.key_pair.private_key = 'abc'
+        pkey = RSAKey.from_private_key.return_value
         connection = self.node_manager.fabric
+        Connection.assert_called_with(self.node_manager.ip_address, connect_kwargs={'pkey': pkey})
         self.assertEqual(connection, Connection.return_value)

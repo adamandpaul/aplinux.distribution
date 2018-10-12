@@ -11,9 +11,11 @@ Creating a tempory instance such as::
 
 """
 
+from io import StringIO
 from libcloud.compute.types import NodeState
 
 import fabric
+import paramiko
 import time
 
 
@@ -60,6 +62,7 @@ class TemporyNodeManager(object):
 
     @property
     def ip_address(self):
+        """Return a best guess ip_address"""
         if self._ip_address is None and self.node is not None:
             ip_addresses = self.node.public_ips + self.node.private_ips
             if len(ip_addresses) > 0:
@@ -70,6 +73,9 @@ class TemporyNodeManager(object):
 
     @property
     def fabric(self):
+        """Return a fabric connection object"""
         if self._fabric is None and self.ip_address is not None:
-            self._fabric = fabric.Connection(self.ip_address)
+            fin_private_key = StringIO(self.key_pair.private_key)
+            pkey = paramiko.RSAKey.from_private_key(fin_private_key)
+            self._fabric = fabric.Connection(self.ip_address, connect_kwargs={'pkey': pkey})
         return self._fabric
