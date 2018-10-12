@@ -71,6 +71,14 @@ class TestSimpleTemporyNodeRunning(TestCase):
     def test_ip_address(self):
         self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
 
+    def test_set_ipaddress(self):
+        self.node_manager.ip_address = 'foo'
+        self.assertEqual(self.node_manager.ip_address, 'foo')
+
+        # a ip_address of None should cause a recalculation
+        self.node_manager.ip_address = None
+        self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
+
     @patch('fabric.Connection')
     @patch('paramiko.RSAKey')
     def test_fabric(self, RSAKey, Connection):  # noqa: N803 arg name should be lower case

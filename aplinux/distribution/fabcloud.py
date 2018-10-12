@@ -69,6 +69,11 @@ class TemporyNodeManager(object):
                 self._ip_address = ip_addresses[0]
         return self._ip_address
 
+    @ip_address.setter
+    def ip_address(self, value):
+        """Allow for users to set the IP address specificly"""
+        self._ip_address = value
+
     _fabric = None
 
     @property
