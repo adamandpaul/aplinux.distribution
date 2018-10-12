@@ -11,7 +11,10 @@ Creating a tempory instance such as::
 
 """
 
+from libcloud.compute.types import NodeState
+
 import fabric
+import time
 
 
 class TemporyNodeManager(object):
@@ -42,6 +45,16 @@ class TemporyNodeManager(object):
             if node.id == node_id:
                 self.node = node
                 return
+
+    def destroy(self):
+        """Destroy the node, waiting for it to be terminated"""
+        self.node.destroy()
+        for i in range(60):
+            time.sleep(5)
+            self.refresh_node()
+            if self.node.state == NodeState.TERMINATED:
+                return
+        raise Exception('Node failed to terminate')
 
     _ip_address = None
 

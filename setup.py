@@ -21,6 +21,7 @@ setup(name='aplinux.distribution',
           'setuptools',
 
           # Other deps
+          'apache-libcloud',
           'fabric',
 
       ],

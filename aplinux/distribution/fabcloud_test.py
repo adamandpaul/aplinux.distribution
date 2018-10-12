@@ -1,8 +1,10 @@
 # -*- coding:utf-8 -*-
 
 from . import fabcloud
+from libcloud.compute.types import NodeState
 from unittest import TestCase
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 
@@ -56,6 +58,15 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.node.driver.list_nodes.return_value = [other_node, fresh_node]
         self.node_manager.refresh_node()
         self.assertEqual(self.node_manager.node, fresh_node)
+
+    @patch('time.sleep')
+    def test_destroy(self, sleep):
+        self.node.state = NodeState.TERMINATED  # preset to terminated so that the destroy method returns
+        self.node_manager.refresh_node = Mock()
+        self.node_manager.destroy()
+        self.node.destroy.aseert_called_with()
+        sleep.assert_called_with(5)
+        self.node_manager.refresh_node.assert_called_with()
 
     def test_ip_address(self):
         self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
