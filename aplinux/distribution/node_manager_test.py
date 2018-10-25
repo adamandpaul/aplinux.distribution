@@ -41,6 +41,12 @@ class TestSimpleTemporyNodePreStart(TestCase):
         self.assertEqual(self.node_manager.node, expected_node)
         self.driver.wait_until_running.assert_called_with([expected_node])
 
+    def test_context_enter(self):
+        self.node_manager.create = MagicMock()
+        result = self.node_manager.__enter__()
+        self.node_manager.create.assert_called_with()
+        self.assertEqual(result, self.node_manager)
+
 
 class TestSimpleTemporyNodeRunning(TestCase):
 
