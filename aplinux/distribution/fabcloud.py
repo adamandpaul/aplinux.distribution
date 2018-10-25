@@ -89,5 +89,7 @@ class TemporyNodeManager(object):
         if self._fabric is None and self.ip_address is not None:
             fin_private_key = StringIO(self.key_pair.private_key)
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            self._fabric = fabric.Connection(self.ip_address, connect_kwargs={'pkey': pkey})
+            self._fabric = fabric.Connection(self.ip_address,
+                                             user=self.user,
+                                             connect_kwargs={'pkey': pkey, 'look_for_keys': False})
         return self._fabric
