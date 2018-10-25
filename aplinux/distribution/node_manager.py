@@ -12,6 +12,7 @@ Creating a tempory instance such as::
 """
 
 from io import StringIO
+from libcloud.compute.types import LibcloudError
 from libcloud.compute.types import NodeState
 
 import fabric
@@ -71,21 +72,37 @@ class TemporyNode(object):
 
     def refresh_node(self):
         """Refresh the node from the node's driver"""
-        node_id = self.node.id
-        for node in self.node.driver.list_nodes():
-            if node.id == node_id:
-                self.node = node
-                return
+        if self.node is not None:
+            node_id = self.node.id
+            for node in self.node.driver.list_nodes():
+                if node.id == node_id:
+                    self.node = node
+            self.node = None
 
     def destroy(self):
         """Destroy the node, waiting for it to be terminated"""
-        self.node.destroy()
+
+        # Atempt a destroy
+        destroy_error = None
+        try:
+            self.node.destroy()
+        except LibcloudError as err:
+            destroy_error = err
+
+        # Check that the node has gorne - sometimes the operation is successful with a timeout error
         for i in range(60):
-            time.sleep(5)
             self.refresh_node()
+            if self.node is None:
+                return
             if self.node.state == NodeState.TERMINATED:
                 return
-        raise Exception('Node failed to terminate')
+            time.sleep(3)
+
+        # if we have a destroy error then raise from that error
+        if destroy_error is not None:
+            raise NodeManagerError('Node failed to terminate') from destroy_error
+        else:
+            raise NodeManagerError('Node failed to terminate')
 
     _ip_address = None
 

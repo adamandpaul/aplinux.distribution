@@ -10,7 +10,7 @@ Setup imports::
     >>> from libcloud.compute.base import KeyPair
     >>> from paramiko.rsakey import RSAKey
     >>> from io import StringIO
-    >>> from aplinux.distribution.fabcloud import TemporyNodeManager
+    >>> from aplinux.distribution.node_manager import TemporyNode
 
 Get our cloud driver::
 
@@ -51,6 +51,6 @@ Define the node meta data (in GCE the ssh-key goes here)::
 
 Run tempory instance::
 
-    >>> with TemporyNodeManager(driver, 'centos', key_pair, image=image, size=node_size, ex_metadata=ex_metadata) as nm:
-    ...     nm.fabric.run('echo hello')
+    >>> with TemporyNode(driver, 'centos', key_pair, image=image, size=node_size, ex_metadata=ex_metadata) as nm:
+    ...     print(nm.fabric.run('echo hello').stdout)
     hello

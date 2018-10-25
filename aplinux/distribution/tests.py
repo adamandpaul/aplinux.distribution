@@ -57,5 +57,8 @@ def integration_test_suite(package='aplinux.distribution', doctests_path='integr
         if fnmatch.fnmatch(item_name, doctest_pattern):
             doctest_file = os.path.join(base_dir, item_name)
             doctest_files.append(doctest_file)
-    suite = doctest.DocFileSuite(*doctest_files, module_relative=False)
+    option_flags = doctest.NORMALIZE_WHITESPACE | doctest.REPORT_ONLY_FIRST_FAILURE | doctest.ELLIPSIS
+    suite = doctest.DocFileSuite(*doctest_files,
+                                 module_relative=False,
+                                 optionflags=option_flags)
     return suite
