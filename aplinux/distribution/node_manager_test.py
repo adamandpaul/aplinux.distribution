@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from . import fabcloud
+from . import node_manager
 from libcloud.compute.types import NodeState
 from unittest import TestCase
 from unittest.mock import MagicMock
@@ -14,13 +14,14 @@ class TestTemporyNodeInit(TestCase):
         driver = MagicMock()
         key_pair = MagicMock()
         node_kwargs = {'image': 'foo', 'size': 'blah'}
-        node_manager = fabcloud.TemporyNodeManager(driver, key_pair, **node_kwargs)
-        self.assertEqual(node_manager.driver, driver)
-        self.assertEqual(node_manager.key_pair, key_pair)
-        self.assertEqual(node_manager.node_kwargs, node_kwargs)
-        self.assertIsNone(node_manager.node)
-        self.assertIsNone(node_manager.fabric)
-        self.assertIsNone(node_manager.ip_address)
+        nm = node_manager.TemporyNode(driver, 'centos', key_pair, **node_kwargs)
+        self.assertEqual(nm.driver, driver)
+        self.assertEqual(nm.user, 'centos')
+        self.assertEqual(nm.key_pair, key_pair)
+        self.assertEqual(nm.node_kwargs, node_kwargs)
+        self.assertIsNone(nm.node)
+        self.assertIsNone(nm.fabric)
+        self.assertIsNone(nm.ip_address)
 
 
 class TestSimpleTemporyNodePreStart(TestCase):
@@ -29,14 +30,16 @@ class TestSimpleTemporyNodePreStart(TestCase):
         self.driver = MagicMock()
         key_pair = MagicMock()
         self.node_kwargs = {'image': 'foo'}
-        self.node_manager = fabcloud.TemporyNodeManager(self.driver, key_pair, **self.node_kwargs)
+        self.node_manager = node_manager.TemporyNode(self.driver, 'centos', key_pair, **self.node_kwargs)
 
-    def test_tempory_node_create(self):
+    @patch('uuid.uuid4')
+    def test_tempory_node_create(self, uuid4):
+        uuid4.return_value = '1234'
         self.node_manager.create()
-        self.driver.create_node.assert_called_with(**self.node_kwargs)
+        self.driver.create_node.assert_called_with(name='tempory-node-1234', **self.node_kwargs)
         expected_node = self.driver.create_node.return_value
         self.assertEqual(self.node_manager.node, expected_node)
-        self.driver.wait_until_running.assert_called_with(expected_node)
+        self.driver.wait_until_running.assert_called_with([expected_node])
 
 
 class TestSimpleTemporyNodeRunning(TestCase):
@@ -45,7 +48,7 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.driver = MagicMock()
         self.key_pair = MagicMock()
         self.node_kwargs = {'image': 'foo'}
-        self.node_manager = fabcloud.TemporyNodeManager(self.driver, self.key_pair, **self.node_kwargs)
+        self.node_manager = node_manager.TemporyNode(self.driver, 'centos', self.key_pair, **self.node_kwargs)
         self.node = MagicMock()
         self.node.public_ips = ['111.222.333.444']
         self.node.private_ips = ['192.168.0.111']
@@ -85,5 +88,8 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.key_pair.private_key = 'abc'
         pkey = RSAKey.from_private_key.return_value
         connection = self.node_manager.fabric
-        Connection.assert_called_with(self.node_manager.ip_address, connect_kwargs={'pkey': pkey})
+        Connection.assert_called_with(self.node_manager.ip_address,
+                                      user='centos',
+                                      connect_kwargs={'pkey': pkey,
+                                                      'look_for_keys': False})
         self.assertEqual(connection, Connection.return_value)
