@@ -125,6 +125,6 @@ class TemporyNode(object):
         """Exit context manager"""
         if self.node is not None:
             try:
-                self.delete()
+                self.destroy()
             except Exception as e:
                 raise NodeManagerCleanupError('An exception was raied during node deletion. Node left in unkonwn state') from e

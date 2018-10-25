@@ -47,6 +47,11 @@ class TestSimpleTemporyNodePreStart(TestCase):
         self.node_manager.create.assert_called_with()
         self.assertEqual(result, self.node_manager)
 
+    def test_context_exit(self):
+        self.node_manager.destroy = MagicMock()
+        self.node_manager.__exit__(None, None, None)
+        self.node_manager.destroy.assert_not_called()
+
 
 class TestSimpleTemporyNodeRunning(TestCase):
 
@@ -76,6 +81,18 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.node.destroy.aseert_called_with()
         sleep.assert_called_with(5)
         self.node_manager.refresh_node.assert_called_with()
+
+    def test_context_exit(self):
+        self.node_manager.destroy = MagicMock()
+        self.node_manager.__exit__(None, None, None)
+        self.node_manager.destroy.assert_called_with()
+
+    def test_context_exit_with_error(self):
+        self.node_manager.destroy = MagicMock()
+        expected_exception = Exception()
+        self.node_manager.destroy.side_effect = [expected_exception]
+        with self.assertRaises(node_manager.NodeManagerCleanupError):
+            self.node_manager.__exit__(None, None, None)
 
     def test_ip_address(self):
         self.assertEqual(self.node_manager.ip_address, '111.222.333.444')
