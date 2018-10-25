@@ -23,6 +23,7 @@ setup(name='aplinux.distribution',
           # Other deps
           'apache-libcloud',
           'paramiko',
+          'PyCrypto',
           'fabric',
 
       ],
