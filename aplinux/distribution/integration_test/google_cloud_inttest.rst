@@ -51,9 +51,6 @@ Define the node meta data (in GCE the ssh-key goes here)::
 
 Run tempory instance::
 
-    >>> nm = TemporyNodeManager(driver, 'centos', key_pair, image=image, size=node_size, ex_metadata=ex_metadata)
-    >>> nm.create()
-    >>> nm.fabric.run('echo hello')
-    >>> nm.destroy()
-
-
+    >>> with TemporyNodeManager(driver, 'centos', key_pair, image=image, size=node_size, ex_metadata=ex_metadata) as nm:
+    ...     nm.fabric.run('echo hello')
+    hello
