@@ -17,6 +17,7 @@ from libcloud.compute.types import NodeState
 import fabric
 import paramiko
 import time
+import uuid
 
 
 class TemporyNodeManager(object):
@@ -28,17 +29,23 @@ class TemporyNodeManager(object):
         node: The libcloud node or None if it hasn't been created
     """
 
-    def __init__(self, driver, key_pair, **kwargs):
+    default_name_prefix = 'tempory-node-'
+
+    def __init__(self, driver, user, key_pair, name_prefix=None, **kwargs):
         """Initialize the tempory node"""
         self.driver = driver
+        self.user = user
         self.key_pair = key_pair
+        self.name_prefix = name_prefix or self.default_name_prefix
         self.node_kwargs = kwargs
         self.node = None
 
     def create(self):
         """Starts the tempory node. Return once the node is considered running"""
-        self.node = self.driver.create_node(**self.node_kwargs)
-        self.driver.wait_until_running(self.node)
+        name_suffix = str(uuid.uuid4())
+        self.name = f'{self.name_prefix}{name_suffix}'
+        self.node = self.driver.create_node(name=self.name, **self.node_kwargs)
+        self.driver.wait_until_running([self.node])
 
     def refresh_node(self):
         """Refresh the node from the node's driver"""
