@@ -65,6 +65,21 @@ class TemporyNode(object):
         self.node_kwargs = kwargs
         self.node = None
 
+
+    _name = None
+
+    @property
+    def name(self):
+        """Create a name for the node"""
+        if self._name is None:
+            name_suffix = str(uuid.uuid4())
+            self._name = f'{self.name_prefix}{name_suffix}'
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
     @property
     def key_pair(self):
         """key pair object used for authentication. If None, then a akey_pair can be generated"""
@@ -93,8 +108,6 @@ class TemporyNode(object):
 
     def create(self):
         """Starts the tempory node. Return once the node is considered running"""
-        name_suffix = str(uuid.uuid4())
-        self.name = f'{self.name_prefix}{name_suffix}'
         self.node = self.driver.create_node(name=self.name, **self.node_kwargs)
         self.driver.wait_until_running([self.node])
 

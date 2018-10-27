@@ -29,6 +29,7 @@ class TestTemporyNodeInit(TestCase):
         driver = MagicMock()
         nm = node_manager.TemporyNode(driver, 'centos')
         key_pair = nm.key_pair
+
         RSAKey.generate.assert_called_with(2048)
         key = RSAKey.generate.return_value
         self.assertEqual(key_pair.fingerprint, key.get_fingerprint.return_value)
@@ -44,10 +45,14 @@ class TestSimpleTemporyNodePreStart(TestCase):
         self.node_manager = node_manager.TemporyNode(self.driver, 'centos', key_pair, **self.node_kwargs)
 
     @patch('uuid.uuid4')
-    def test_tempory_node_create(self, uuid4):
+    def test_name(self, uuid4):
         uuid4.return_value = '1234'
+        self.assertEqual(self.node_manager.name, 'tempory-node-1234')
+
+    def test_tempory_node_create(self):
+        self.node_manager.name = 'node-123'
         self.node_manager.create()
-        self.driver.create_node.assert_called_with(name='tempory-node-1234', **self.node_kwargs)
+        self.driver.create_node.assert_called_with(name='node-123', **self.node_kwargs)
         expected_node = self.driver.create_node.return_value
         self.assertEqual(self.node_manager.node, expected_node)
         self.driver.wait_until_running.assert_called_with([expected_node])
