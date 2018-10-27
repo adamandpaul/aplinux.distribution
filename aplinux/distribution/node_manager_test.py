@@ -75,11 +75,42 @@ class TestSimpleTemporyNodeRunning(TestCase):
 
     @patch('time.sleep')
     def test_destroy(self, sleep):
-        self.node.state = NodeState.TERMINATED  # preset to terminated so that the destroy method returns
+        self.node.state = NodeState.RUNNING
         self.node_manager.refresh_node = Mock()
+        def refresh2():
+            self.node.state = NodeState.TERMINATED  # preset to terminated so that the destroy method returns
+        def refresh1():
+            self.node_manager.refresh_node.side_effect = refresh2
+            pass
+        self.node_manager.refresh_node.side_effect = refresh1
         self.node_manager.destroy()
         self.node.destroy.aseert_called_with()
-        sleep.assert_called_with(5)
+        sleep.assert_called_with(3)
+        self.node_manager.refresh_node.assert_called_with()
+
+    @patch('time.sleep')
+    def test_destroy_node_disapeared(self, sleep):
+        self.node.state = NodeState.RUNNING
+        self.node_manager.refresh_node = Mock()
+        def refresh2():
+            self.node_manager.node = None
+        def refresh1():
+            self.node_manager.refresh_node.side_effect = refresh2
+            pass
+        self.node_manager.refresh_node.side_effect = refresh1
+        self.node_manager.destroy()
+        self.node.destroy.aseert_called_with()
+        sleep.assert_called_with(3)
+        self.node_manager.refresh_node.assert_called_with()
+
+    @patch('time.sleep')
+    def test_destroy_node_filed(self, sleep):
+        self.node.state = NodeState.RUNNING
+        self.node_manager.refresh_node = Mock()
+        with self.assertRaises(node_manager.NodeManagerError):
+            self.node_manager.destroy()
+        self.node.destroy.aseert_called_with()
+        sleep.assert_called_with(3)
         self.node_manager.refresh_node.assert_called_with()
 
     def test_context_exit(self):

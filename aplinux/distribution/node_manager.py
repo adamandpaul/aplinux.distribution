@@ -77,6 +77,7 @@ class TemporyNode(object):
             for node in self.node.driver.list_nodes():
                 if node.id == node_id:
                     self.node = node
+                    return
             self.node = None
 
     def destroy(self):
@@ -145,3 +146,31 @@ class TemporyNode(object):
                 self.destroy()
             except Exception as e:
                 raise NodeManagerCleanupError('An exception was raied during node deletion. Node left in unkonwn state') from e
+
+
+class TemporyGCENode(TemporyNode):
+    """A Google Cloud Tempory Node"""
+
+    def __init__(self, driver, user, image_name, node_size, **kwargs):
+        """Create a tempory node manager for a gce node"""
+
+        image = driver.ex_get_image('centos-7-')
+
+        key = RSAKey.generate(2048)
+        public_key = 'ssh-rsa {} centos'.format(key.get_base64())
+        google_public_key = 'centos:ssh-rsa {} centos'.format(key.get_base64())
+        private_key_fout = StringIO()
+        key.write_private_key(private_key_fout)
+        private_key = private_key_fout.getvalue()
+        key_pair = KeyPair('centos',
+                           public_key=public_key,
+                           fingerprint=key.get_fingerprint(),
+                           driver=driver,
+                           private_key=private_key)
+        node_size = driver.list_sizes()[0]
+        ex_metadata = {
+            'items': [{'key': 'ssh-keys',
+                       'value': google_public_key }],
+        }
+
+        super().__init__(driver, user, key_pair, image=image, size=node_size, ex_metadata=ex_metadata)
