@@ -24,18 +24,31 @@ class TestTemporyNodeInit(TestCase):
         self.assertIsNone(nm.fabric)
         self.assertIsNone(nm.ip_address)
 
+    @patch('aplinux.distribution.node_manager.StringIO')
     @patch('aplinux.distribution.node_manager.RSAKey')
-    def test_key_pair_generation(self, RSAKey):
+    def test_key_pair_generation(self, RSAKey, StringIO):
         driver = MagicMock()
         nm = node_manager.TemporyNode(driver, 'centos')
         nm.name = 'foo'
         key_pair = nm.key_pair
-        self.assertEqeual(key_pair.name, 'key-pair-foo')
+        self.assertIsInstance(key_pair, KeyPair)
 
+        # assert we got a 2048 key
         RSAKey.generate.assert_called_with(2048)
         key = RSAKey.generate.return_value
+
+        # key name and fingureprint
+        self.assertEqual(key_pair.name, 'key-pair-foo')
         self.assertEqual(key_pair.fingerprint, key.get_fingerprint.return_value)
-        self.assertIsInstance(key_pair, KeyPair)
+
+        # public key
+        public_key_base64 = key.get_base64.return_value
+        self.assertEqual(key_pair.public_key, f'ssh-rsa {public_key_base64} centos')
+
+        # private key
+        private_key_fout = StringIO.return_value
+        key.write_private_key.assert_called_with(private_key_fout)
+        self.assertEqual(key_pair.private_key, private_key_fout.getvalue.return_value)
 
 
 class TestSimpleTemporyNodePreStart(TestCase):
