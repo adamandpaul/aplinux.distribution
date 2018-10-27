@@ -98,7 +98,7 @@ class TemporyNode(object):
             key.write_private_key(private_key_fout)
             private_key = private_key_fout.getvalue()
 
-            self._key_pair = KeyPair('centos',
+            self._key_pair = KeyPair(f'key-pair-{self.name}',
                                      public_key=public_key,
                                      fingerprint=fingerprint,
                                      driver=self.driver,

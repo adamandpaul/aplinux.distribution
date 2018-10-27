@@ -28,7 +28,9 @@ class TestTemporyNodeInit(TestCase):
     def test_key_pair_generation(self, RSAKey):
         driver = MagicMock()
         nm = node_manager.TemporyNode(driver, 'centos')
+        nm.name = 'foo'
         key_pair = nm.key_pair
+        self.assertEqeual(key_pair.name, 'key-pair-foo')
 
         RSAKey.generate.assert_called_with(2048)
         key = RSAKey.generate.return_value
