@@ -14,21 +14,30 @@ class TestTemporyNodeInit(TestCase):
     def test_init(self):
         driver = MagicMock()
         key_pair = MagicMock()
-        node_kwargs = {'image': 'foo', 'size': 'blah'}
-        nm = node_manager.TemporyNode(driver, 'centos', key_pair, **node_kwargs)
+        create_kwargs = {'ex_colour': 'green', 'ex_shape': 'circle'}
+        nm = node_manager.TemporyNode(driver,
+                                      name_prefix='temp-foo-',
+                                      size='big',
+                                      image='linux-foo',
+                                      user='boss',
+                                      key_pair=key_pair,
+                                      **create_kwargs)
         self.assertEqual(nm.driver, driver)
-        self.assertEqual(nm.user, 'centos')
+        self.assertEqual(nm.name_prefix, 'temp-foo-')
+        self.assertEqual(nm.size, 'big')
+        self.assertEqual(nm.image, 'linux-foo')
+        self.assertEqual(nm.user, 'boss')
         self.assertEqual(nm.key_pair, key_pair)
-        self.assertEqual(nm.node_kwargs, node_kwargs)
+        self.assertEqual(nm.create_kwargs, create_kwargs)
         self.assertIsNone(nm.node)
         self.assertIsNone(nm.fabric)
         self.assertIsNone(nm.ip_address)
 
     @patch('aplinux.distribution.node_manager.StringIO')
     @patch('aplinux.distribution.node_manager.RSAKey')
-    def test_key_pair_generation(self, RSAKey, StringIO):
+    def test_key_pair_generation(self, RSAKey, StringIO):  # noqa: N803 arg name should be lower case
         driver = MagicMock()
-        nm = node_manager.TemporyNode(driver, 'centos')
+        nm = node_manager.TemporyNode(driver)
         nm.name = 'foo'
         key_pair = nm.key_pair
         self.assertIsInstance(key_pair, KeyPair)
@@ -43,7 +52,7 @@ class TestTemporyNodeInit(TestCase):
 
         # public key
         public_key_base64 = key.get_base64.return_value
-        self.assertEqual(key_pair.public_key, f'ssh-rsa {public_key_base64} centos')
+        self.assertEqual(key_pair.public_key, f'ssh-rsa {public_key_base64} admin')
 
         # private key
         private_key_fout = StringIO.return_value
@@ -56,8 +65,13 @@ class TestSimpleTemporyNodePreStart(TestCase):
     def setUp(self):
         self.driver = MagicMock()
         key_pair = MagicMock()
-        self.node_kwargs = {'image': 'foo'}
-        self.node_manager = node_manager.TemporyNode(self.driver, 'centos', key_pair, **self.node_kwargs)
+        self.create_kwargs = {'colour': 'red'}
+        self.node_manager = node_manager.TemporyNode(self.driver,
+                                                     user='centos',
+                                                     size='small',
+                                                     image='foo',
+                                                     key_pair=key_pair,
+                                                     **self.create_kwargs)
 
     @patch('uuid.uuid4')
     def test_name(self, uuid4):
@@ -67,7 +81,10 @@ class TestSimpleTemporyNodePreStart(TestCase):
     def test_tempory_node_create(self):
         self.node_manager.name = 'node-123'
         self.node_manager.create()
-        self.driver.create_node.assert_called_with(name='node-123', **self.node_kwargs)
+        self.driver.create_node.assert_called_with(name='node-123',
+                                                   size='small',
+                                                   image='foo',
+                                                   **self.create_kwargs)
         expected_node = self.driver.create_node.return_value
         self.assertEqual(self.node_manager.node, expected_node)
         self.driver.wait_until_running.assert_called_with([expected_node])
@@ -89,8 +106,13 @@ class TestSimpleTemporyNodeRunning(TestCase):
     def setUp(self):
         self.driver = MagicMock()
         self.key_pair = MagicMock()
-        self.node_kwargs = {'image': 'foo'}
-        self.node_manager = node_manager.TemporyNode(self.driver, 'centos', self.key_pair, **self.node_kwargs)
+        self.node_kwargs = {'colour': 'blue'}
+        self.node_manager = node_manager.TemporyNode(self.driver,
+                                                     size='small',
+                                                     image='foo',
+                                                     user='centos',
+                                                     key_pair=self.key_pair,
+                                                     **self.node_kwargs)
         self.node = MagicMock()
         self.node.public_ips = ['111.222.333.444']
         self.node.private_ips = ['192.168.0.111']
@@ -108,11 +130,13 @@ class TestSimpleTemporyNodeRunning(TestCase):
     def test_destroy(self, sleep):
         self.node.state = NodeState.RUNNING
         self.node_manager.refresh_node = Mock()
+
         def refresh2():
             self.node.state = NodeState.TERMINATED  # preset to terminated so that the destroy method returns
+
         def refresh1():
             self.node_manager.refresh_node.side_effect = refresh2
-            pass
+
         self.node_manager.refresh_node.side_effect = refresh1
         self.node_manager.destroy()
         self.node.destroy.aseert_called_with()
@@ -123,11 +147,13 @@ class TestSimpleTemporyNodeRunning(TestCase):
     def test_destroy_node_disapeared(self, sleep):
         self.node.state = NodeState.RUNNING
         self.node_manager.refresh_node = Mock()
+
         def refresh2():
             self.node_manager.node = None
+
         def refresh1():
             self.node_manager.refresh_node.side_effect = refresh2
-            pass
+
         self.node_manager.refresh_node.side_effect = refresh1
         self.node_manager.destroy()
         self.node.destroy.aseert_called_with()

@@ -36,35 +36,11 @@ class TemporyNode(object):
 
     Attributes:
         driver: A libcloud cloud driver
-        user: The user to connect with
-        key_pair: The libcloud key pair to use
         name_prefix: The node name prefix that is used for prefixing instance names
-        node_kwargs: The kwargs passed to the create_node method
+        user: The user to connect with
+        create_kwargs: The kwargs passed to the create_node method
         node: The libcloud node or None if it hasn't been created
     """
-
-    name_prefix = 'tempory-node-'
-
-    def __init__(self, driver, user, key_pair=None, name_prefix=None, **kwargs):
-        """Initialize the tempory node manager.
-
-        Instances are later created with the create() method. They are given the name name_prefix
-        plus a generated uuid.
-
-        Args:
-            driver: The libcloud driver to use
-            user: The user used to create ssh connections with fabric
-            key_pair: The libcloud key_pair used for fabric connections
-            name_prefix: The desired name prefix for instances.
-            **kwargs: The extra arguments passed to driver.create_node()
-        """
-        self.driver = driver
-        self.user = user
-        self._key_pair = key_pair
-        self.name_prefix = name_prefix or self.name_prefix
-        self.node_kwargs = kwargs
-        self.node = None
-
 
     _name = None
 
@@ -79,6 +55,32 @@ class TemporyNode(object):
     @name.setter
     def name(self, value):
         self._name = value
+
+    _size = None
+
+    @property
+    def size(self):
+        """the libcloud size value"""
+        if self._size is None:
+            sizes = self.driver.list_sizes()
+            if len(sizes) > 0:
+                self._size = sizes[0]
+        return self._size
+
+    @size.setter
+    def size(self, value):
+        self._size = value
+
+    _image = None
+
+    @property
+    def image(self):
+        """the libcloud image value"""
+        return self._image
+
+    @image.setter
+    def image(self, value):
+        self._image = value
 
     @property
     def key_pair(self):
@@ -106,9 +108,71 @@ class TemporyNode(object):
 
         return self._key_pair
 
+    @key_pair.setter
+    def key_pair(self, value):
+        self._key_pair = value
+
+    _ip_address = None
+
+    @property
+    def ip_address(self):
+        """Return a best guess ip_address"""
+        if self._ip_address is None and self.node is not None:
+            ip_addresses = self.node.public_ips + self.node.private_ips
+            if len(ip_addresses) > 0:
+                self._ip_address = ip_addresses[0]
+        return self._ip_address
+
+    @ip_address.setter
+    def ip_address(self, value):
+        """Allow for users to set the IP address specificly"""
+        self._ip_address = value
+
+    _fabric = None
+
+    @property
+    def fabric(self):
+        """Return a fabric connection object"""
+        if self._fabric is None and self.ip_address is not None:
+            fin_private_key = StringIO(self.key_pair.private_key)
+            pkey = paramiko.RSAKey.from_private_key(fin_private_key)
+            self._fabric = fabric.Connection(self.ip_address,
+                                             user=self.user,
+                                             connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+        return self._fabric
+
+    def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', key_pair=None, **kwargs):
+        """Initialize the tempory node manager.
+
+        Instances are later created with the create() method. They are given the name name_prefix
+        plus a generated uuid.
+
+        Args:
+            driver: The libcloud driver to use
+            name_prefix: The desired name prefix for instances.
+            size: The desired size. If None then the first from list_sizes is uesed
+            user: The user used to create ssh connections with fabric
+            key_pair: The libcloud key_pair used for fabric connections. Auto generated if None
+            **kwargs: The extra arguments passed to driver.create_node()
+        """
+        # set attributes
+        self.driver = driver
+        self.name_prefix = name_prefix or 'tempory-node-'
+        self.user = user
+        self.create_kwargs = kwargs
+        self.node = None
+
+        # set properties
+        self.size = size
+        self.image = image
+        self.key_pair = key_pair
+
     def create(self):
         """Starts the tempory node. Return once the node is considered running"""
-        self.node = self.driver.create_node(name=self.name, **self.node_kwargs)
+        self.node = self.driver.create_node(name=self.name,
+                                            size=self.size,
+                                            image=self.image,
+                                            **self.create_kwargs)
         self.driver.wait_until_running([self.node])
 
     def refresh_node(self):
@@ -146,35 +210,6 @@ class TemporyNode(object):
         else:
             raise NodeManagerError('Node failed to terminate')
 
-    _ip_address = None
-
-    @property
-    def ip_address(self):
-        """Return a best guess ip_address"""
-        if self._ip_address is None and self.node is not None:
-            ip_addresses = self.node.public_ips + self.node.private_ips
-            if len(ip_addresses) > 0:
-                self._ip_address = ip_addresses[0]
-        return self._ip_address
-
-    @ip_address.setter
-    def ip_address(self, value):
-        """Allow for users to set the IP address specificly"""
-        self._ip_address = value
-
-    _fabric = None
-
-    @property
-    def fabric(self):
-        """Return a fabric connection object"""
-        if self._fabric is None and self.ip_address is not None:
-            fin_private_key = StringIO(self.key_pair.private_key)
-            pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            self._fabric = fabric.Connection(self.ip_address,
-                                             user=self.user,
-                                             connect_kwargs={'pkey': pkey, 'look_for_keys': False})
-        return self._fabric
-
     def __enter__(self):
         """Enter python context"""
         self.create()
@@ -192,26 +227,19 @@ class TemporyNode(object):
 class TemporyGCENode(TemporyNode):
     """A Google Cloud Tempory Node"""
 
-    def __init__(self, driver, user, image_name, node_size, **kwargs):
+    @property
+    def image(self):
+        """if image has been a string then fetch the image from ex_get_image"""
+        super_image = super().image
+        if isinstance(super_image, str):
+            driver_image = self.driver.ex_get_image(super_image)
+            self.image = driver_image
+        return super().image
+
+    def __init__(self, *args, **kwargs):
         """Create a tempory node manager for a gce node"""
-
-        image = driver.ex_get_image('centos-7-')
-
-        key = RSAKey.generate(2048)
-        public_key = 'ssh-rsa {} centos'.format(key.get_base64())
-        google_public_key = 'centos:ssh-rsa {} centos'.format(key.get_base64())
-        private_key_fout = StringIO()
-        key.write_private_key(private_key_fout)
-        private_key = private_key_fout.getvalue()
-        key_pair = KeyPair('centos',
-                           public_key=public_key,
-                           fingerprint=key.get_fingerprint(),
-                           driver=driver,
-                           private_key=private_key)
-        node_size = driver.list_sizes()[0]
-        ex_metadata = {
-            'items': [{'key': 'ssh-keys',
-                       'value': google_public_key }],
-        }
-
-        super().__init__(driver, user, key_pair, image=image, size=node_size, ex_metadata=ex_metadata)
+        super(*args, **kwargs)
+        meta = self.create_kwargs.setdefeault('ex_meteadata', {})
+        items = meta.setdefault('items', [])
+        items.append({'key': 'ssh-keys',
+                      'value': f'{self.user}:{self.key_pair.public_key}'})
