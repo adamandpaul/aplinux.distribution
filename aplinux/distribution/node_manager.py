@@ -227,7 +227,7 @@ class TemporyNode(object):
 class TemporyGCENode(TemporyNode):
     """A Google Cloud Tempory Node"""
 
-    @property
+    @TemporyNode.image.getter
     def image(self):
         """if image has been a string then fetch the image from ex_get_image"""
         super_image = super().image
@@ -238,8 +238,8 @@ class TemporyGCENode(TemporyNode):
 
     def __init__(self, *args, **kwargs):
         """Create a tempory node manager for a gce node"""
-        super(*args, **kwargs)
-        meta = self.create_kwargs.setdefeault('ex_meteadata', {})
+        super().__init__(*args, **kwargs)
+        meta = self.create_kwargs.setdefault('ex_metadata', {})
         items = meta.setdefault('items', [])
         items.append({'key': 'ssh-keys',
                       'value': f'{self.user}:{self.key_pair.public_key}'})

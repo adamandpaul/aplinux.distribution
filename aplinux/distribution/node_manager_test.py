@@ -204,3 +204,25 @@ class TestSimpleTemporyNodeRunning(TestCase):
                                       connect_kwargs={'pkey': pkey,
                                                       'look_for_keys': False})
         self.assertEqual(connection, Connection.return_value)
+
+
+class TestTemporyGCENode(TestCase):
+
+    def setUp(self):
+        self.driver = MagicMock()
+        self.key_pair = MagicMock()
+        self.key_pair.public_key = 'ssh-rsa abcdefg centos'
+        self.node_manager = node_manager.TemporyGCENode(self.driver,
+                                                        image='foo-bar-7-',
+                                                        key_pair=self.key_pair)
+
+    def test_init(self):
+        self.assertEqual(self.node_manager.create_kwargs['ex_metadata'],
+                         {'items': [{'key': 'ssh-keys',
+                                     'value': 'admin:ssh-rsa abcdefg centos'}]})
+
+    def test_image(self):
+        expected_image = self.driver.ex_get_image.return_value
+        image = self.node_manager.image
+        self.driver.ex_get_image.assert_called_with('foo-bar-7-')
+        self.assertEqual(image, expected_image)
