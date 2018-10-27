@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from . import node_manager
+from libcloud.compute.base import KeyPair
 from libcloud.compute.types import NodeState
 from unittest import TestCase
 from unittest.mock import MagicMock
@@ -22,6 +23,16 @@ class TestTemporyNodeInit(TestCase):
         self.assertIsNone(nm.node)
         self.assertIsNone(nm.fabric)
         self.assertIsNone(nm.ip_address)
+
+    @patch('aplinux.distribution.node_manager.RSAKey')
+    def test_key_pair_generation(self, RSAKey):
+        driver = MagicMock()
+        nm = node_manager.TemporyNode(driver, 'centos')
+        key_pair = nm.key_pair
+        RSAKey.generate.assert_called_with(2048)
+        key = RSAKey.generate.return_value
+        self.assertEqual(key_pair.fingerprint, key.get_fingerprint.return_value)
+        self.assertIsInstance(key_pair, KeyPair)
 
 
 class TestSimpleTemporyNodePreStart(TestCase):

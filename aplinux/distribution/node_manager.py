@@ -12,8 +12,10 @@ Creating a tempory instance such as::
 """
 
 from io import StringIO
+from libcloud.compute.base import KeyPair
 from libcloud.compute.types import LibcloudError
 from libcloud.compute.types import NodeState
+from paramiko.rsakey import RSAKey
 
 import fabric
 import paramiko
@@ -43,7 +45,7 @@ class TemporyNode(object):
 
     name_prefix = 'tempory-node-'
 
-    def __init__(self, driver, user, key_pair, name_prefix=None, **kwargs):
+    def __init__(self, driver, user, key_pair=None, name_prefix=None, **kwargs):
         """Initialize the tempory node manager.
 
         Instances are later created with the create() method. They are given the name name_prefix
@@ -58,10 +60,36 @@ class TemporyNode(object):
         """
         self.driver = driver
         self.user = user
-        self.key_pair = key_pair
+        self._key_pair = key_pair
         self.name_prefix = name_prefix or self.name_prefix
         self.node_kwargs = kwargs
         self.node = None
+
+    @property
+    def key_pair(self):
+        """key pair object used for authentication. If None, then a akey_pair can be generated"""
+        if self._key_pair is None:
+
+            # generate a key
+            key = RSAKey.generate(2048)
+            fingerprint = key.get_fingerprint()
+
+            # construct the public key
+            public_key_base64 = key.get_base64()
+            public_key = f'ssh-rsa {public_key_base64} {self.user}'
+
+            # construct the private key
+            private_key_fout = StringIO()
+            key.write_private_key(private_key_fout)
+            private_key = private_key_fout.getvalue()
+
+            self._key_pair = KeyPair('centos',
+                                     public_key=public_key,
+                                     fingerprint=fingerprint,
+                                     driver=self.driver,
+                                     private_key=private_key)
+
+        return self._key_pair
 
     def create(self):
         """Starts the tempory node. Return once the node is considered running"""
