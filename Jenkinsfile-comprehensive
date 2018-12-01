@@ -8,7 +8,7 @@ pipeline {
             steps {
                 sh 'ssh -o StrictHostKeyChecking=no git@github.com || true'
                 sh 'ssh -o StrictHostKeyChecking=no git@bitbucket.org || true'
-                sh 'bin/bootstrap'
+                sh 'bin/bootstrap-develop'
             }
         }
         stage('build') {
@@ -25,6 +25,16 @@ pipeline {
         stage('unit-tests') {
             steps {
                 sh 'bin/test'
+            }
+        }
+        stage('unit-test-coverage') {
+            steps {
+                sh 'bin/createcoverage'
+            }
+        }
+        stage('integration-tests') {
+            steps {
+                sh 'bin/test --test-suite intergration_test_suite'
             }
         }
     }

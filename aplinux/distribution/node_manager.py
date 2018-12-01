@@ -18,9 +18,13 @@ from libcloud.compute.types import NodeState
 from paramiko.rsakey import RSAKey
 
 import fabric
+import logging
 import paramiko
 import time
 import uuid
+
+
+logger = logging.getLogger('aplinux.distribution')
 
 
 class NodeManagerError(Exception):
@@ -169,6 +173,7 @@ class TemporyNode(object):
 
     def create(self):
         """Starts the tempory node. Return once the node is considered running"""
+        logger.info(f'Creating tempory {self.size} node from {self.image}: {self.name}')
         self.node = self.driver.create_node(name=self.name,
                                             size=self.size,
                                             image=self.image,
@@ -187,6 +192,7 @@ class TemporyNode(object):
 
     def destroy(self):
         """Destroy the node, waiting for it to be terminated"""
+        logger.info(f'Destroying tempory node: {self.name}')
 
         # Atempt a destroy
         destroy_error = None

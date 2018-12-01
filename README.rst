@@ -42,6 +42,9 @@ Test runner:
 
     Tests will be auto discovered from files ending in ``_test.py``
 
+    To run the more expensive integration tests which end in ``_inttest.py``
+    specifiy the integration test suite by running ``bin/test --test-suite integration_test_suite``
+
 Code quality tests:
     Run ``bin/code-analysis``. Be aware that this is also run as a git pre-commit
     hook and code which does not conform will prevent git commits.

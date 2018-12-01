@@ -4,6 +4,10 @@ echo "bootstraping develop build (let's be bleeding edge)..."
 set -x
 
 BUILDOUT_DIR=`dirname "$0"`/..
+cd $BUILDOUT_DIR
+
+# Create our buildout.cfg - not needed since this is an egg only
+# cp -f buildout-develop.cfg.in buildout.cfg
 
 # Only overwrite the local.cfg if it is not presently there
 test -f buildout/local.cfg || cp buildout/local.cfg.in buildout/local.cfg

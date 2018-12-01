@@ -2,6 +2,10 @@
 set -e
 echo 'building...'
 
+# put us in the correct dir
+BUILDOUT_DIR=`dirname "$0"`/..
+cd $BUILDOUT_DIR
+
 # Set the prepeend the bin dir to the path
 SCRIPT=$(readlink -f "$0")
 BIN_DIR=$(dirname "$SCRIPT")
