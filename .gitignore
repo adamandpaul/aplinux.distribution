@@ -23,6 +23,7 @@
 /frontend/node_modules/
 /htmlcov/
 /var/
+/venv/
 
 # Template Exceptions
 
