@@ -192,6 +192,10 @@ class TemporyNode(object):
 
     def destroy(self):
         """Destroy the node, waiting for it to be terminated"""
+        if self.node is None:
+            logger.info(f'No tempory node to destroy')
+            return
+
         logger.info(f'Destroying tempory node: {self.name}')
 
         # Atempt a destroy
@@ -223,11 +227,10 @@ class TemporyNode(object):
 
     def __exit__(self, exc_type, ex_value, ex_tb):
         """Exit context manager"""
-        if self.node is not None:
-            try:
-                self.destroy()
-            except Exception as e:
-                raise NodeManagerCleanupError('An exception was raied during node deletion. Node left in unkonwn state') from e
+        try:
+            self.destroy()
+        except Exception as e:
+            raise NodeManagerCleanupError('An exception was raied during node deletion. Node left in unkonwn state') from e
 
 
 class TemporyGCENode(TemporyNode):

@@ -98,7 +98,7 @@ class TestSimpleTemporyNodePreStart(TestCase):
     def test_context_exit(self):
         self.node_manager.destroy = MagicMock()
         self.node_manager.__exit__(None, None, None)
-        self.node_manager.destroy.assert_not_called()
+        self.node_manager.destroy.assert_called()
 
 
 class TestSimpleTemporyNodeRunning(TestCase):
