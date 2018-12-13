@@ -1,0 +1,32 @@
+=======================================
+Using aplinux.distribution with AWS EC2
+=======================================
+
+Get our cloud driver::
+
+    >>> from libcloud.compute.providers import get_driver
+    >>> from libcloud.compute.types import Provider
+    >>> import os
+    >>> cls = get_driver(Provider.EC2)
+    >>> driver = cls(os.environ['APLINUX_INTEGRATION_TEST_AWS_ACCESS_ID'],
+    ...              os.environ['APLINUX_INTEGRATION_TEST_AWS_SECRET_KEY'],
+    ...              region='us-east-1')
+
+Set up the security group names, e.g. to allow SSH access on port 22::
+
+    # Pipe a.k.a. '|' separated list of security group names, remember
+    # to use bash "" which will allow spaces and other valid characters,
+    # e.g. export APLINUX_INTEGRATION_TEST_AWS_SECURITY_GROUP_NAMES="test group|test group2"
+    >>> security_group_names = os.environ['APLINUX_INTEGRATION_TEST_AWS_SECURITY_GROUP_NAMES']
+
+Run temporary instance::
+
+    >>> from aplinux.distribution.node_manager import TemporyEC2Node
+    >>> image = 'ami-9887c6e7'  # CentOS 7 via AWS Marketplace subscription
+    >>> size = 't3.micro'
+    >>> user = 'centos'
+
+    >>> with TemporyEC2Node(driver, image=image, size=size, security_group_names=security_group_names, user=user) as nm:
+    ...     print(nm.fabric.run('echo hello').stdout)
+    hello
+

@@ -252,3 +252,72 @@ class TemporyGCENode(TemporyNode):
         items = meta.setdefault('items', [])
         items.append({'key': 'ssh-keys',
                       'value': f'{self.user}:{self.key_pair.public_key}'})
+
+
+class TemporyEC2Node(TemporyNode):
+    """An Amazon Web Services Elastic Compute Cloud (EC2) temporary node"""
+
+    # Use pipe delimiter ASCII code 124,
+    # as it's not a valid security group character
+    # https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html
+    EX_SECURITY_GROUP_DELIMITER = '|'
+
+    def __init__(self, *args, **kwargs):
+        """Create a temporary node manager for an AWS EC2 node"""
+        kwargs.setdefault('ex_blockdevicemappings', [
+            {
+                'DeviceName': '/dev/sda1',
+                'Ebs': {'DeleteOnTermination': True},
+            },
+        ])
+        security_group_names = kwargs.get('security_group_names', '')
+        if security_group_names:
+            kwargs['ex_security_groups'] = security_group_names.split(
+                self.EX_SECURITY_GROUP_DELIMITER)
+        super().__init__(*args, **kwargs)
+        self.create_kwargs.setdefault('ex_keyname', self.key_pair.name)
+
+    def create(self):
+        """Also add a key pair to access the EC2 instance"""
+        logger.info(f'Importing temporary key pair: {self.key_pair.name}')
+        self.driver.import_key_pair_from_string(
+            self.key_pair.name,
+            self.key_pair.public_key,
+        )
+        super().create()
+
+        # About 50% of the time, got a paramiko.ssh_exception.NoValidConnectionsError:
+        # [Errno None] Unable to connect to port 22 on 3.80.6.237
+        time.sleep(3)
+
+        # The public IP address does not show up when the node is first fetched
+        logger.info('Refreshing node')
+        self.refresh_node()
+
+    def destroy(self):
+        """Also clean up the key pair if it has been created"""
+        super().destroy()
+        if self._key_pair:
+            logger.info(f'Deleting temporary key pair: {self.key_pair.name}')
+            self.driver.delete_key_pair(self.key_pair)
+
+    @TemporyNode.image.getter
+    def image(self):
+        """if image is a string then fetch the image from get_image"""
+        super_image = super().image
+        if isinstance(super_image, str):
+            driver_image = self.driver.get_image(super_image)
+            self.image = driver_image
+        return super().image
+
+    @TemporyNode.size.getter
+    def size(self):
+        """If size is a string then fetch the size from the
+        driver-provided list of sizes"""
+        super_size = super().size
+        if isinstance(super_size, str):
+            driver_sizes = self.driver.list_sizes()
+            filtered_sizes = [_ for _ in driver_sizes if _.id == super_size]
+            if filtered_sizes:
+                self.size = filtered_sizes[0]
+        return super().size
