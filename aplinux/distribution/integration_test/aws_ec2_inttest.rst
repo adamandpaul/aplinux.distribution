@@ -32,6 +32,5 @@ Run temporary instance::
     >>> user = 'centos'
 
     >>> with TemporyEC2Node(driver, image=image, size=size, security_group_names=security_group_names, user=user) as nm:
-    ...     print(nm.fabric.run('echo hello').stdout)
+    ...     print(nm.fabric.run('echo hello', hide=True).stdout)
     hello
-
