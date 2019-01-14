@@ -17,5 +17,5 @@ Run tempory instance::
 
     >>> from aplinux.distribution.node_manager import TemporyGCENode
     >>> with TemporyGCENode(driver, image='centos-7-') as nm:
-    ...     print(nm.fabric.run('echo hello').stdout)
+    ...     print(nm.fabric.run('echo hello', hide=True).stdout)
     hello
