@@ -16,6 +16,7 @@ from libcloud.compute.base import KeyPair
 from libcloud.compute.types import LibcloudError
 from libcloud.compute.types import NodeState
 from paramiko.rsakey import RSAKey
+from retry import retry
 
 import fabric
 import logging
@@ -228,6 +229,18 @@ class TemporyNode(object):
                 self.destroy()
             except Exception as e:
                 raise NodeManagerCleanupError('An exception was raied during node deletion. Node left in unkonwn state') from e
+
+    def wait_untill_ready(self, tries=10, delay=0.5, backoff=1.5):
+        """Wait untill the node is able to accept fabric run commands
+
+        Args:
+            timeout (int): The number of seconds to wait until raising an exception
+            interval (int): The number of seconds between retry
+        """
+        @retry(tries=tries, delay=delay, backoff=backoff)
+        def test_connect():
+            self.fabric.run('echo "hello"')
+        test_connect()
 
 
 class TemporyGCENode(TemporyNode):

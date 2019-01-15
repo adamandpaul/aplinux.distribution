@@ -25,6 +25,7 @@ setup(name='aplinux.distribution',
           'paramiko',
           'PyCrypto',
           'fabric',
+          'retry',
 
       ],
       entry_points="""
