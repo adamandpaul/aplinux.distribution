@@ -263,6 +263,10 @@ class TemporyNode(object):
             self.fabric.run('echo "hello"')
         test_connect()
 
+    def poison_pill(self, minutes=1440):
+        """Shedules a VM shutdown after a given number of minutes"""
+        self.fabric.sudo(f'shutdown -h +{minutes}')
+
 
 class TemporyGCENode(TemporyNode):
     """A Google Cloud Tempory Node"""
