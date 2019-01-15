@@ -118,13 +118,18 @@ class TestSimpleTemporyNodeRunning(TestCase):
         self.node.private_ips = ['192.168.0.111']
         self.node_manager.node = self.node
 
-    def test_refresh_node(self):
+    def test_get_node_by_name(self):
+        expected_node = MagicMock()
+        expected_node.name = 'foo-123'
         other_node = MagicMock()
-        fresh_node = MagicMock()
-        fresh_node.id = self.node.id
-        self.node.driver.list_nodes.return_value = [other_node, fresh_node]
+        self.driver.list_nodes.return_value = [other_node, expected_node]
+        return_node = self.node_manager._get_node_by_name('foo-123')
+        self.assertEqual(return_node, expected_node)
+
+    def test_refresh_node(self):
+        self.node_manager._get_node_by_name = MagicMock(return_value='123')
         self.node_manager.refresh_node()
-        self.assertEqual(self.node_manager.node, fresh_node)
+        self.assertEqual(self.node_manager.node, '123')
 
     @patch('time.sleep')
     def test_destroy(self, sleep):
