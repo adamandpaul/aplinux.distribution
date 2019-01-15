@@ -331,10 +331,12 @@ class TemporyEC2Node(TemporyNode):
 
     def destroy(self):
         """Also clean up the key pair if it has been created"""
-        super().destroy()
-        if self._key_pair:
-            logger.info(f'Deleting temporary key pair: {self.key_pair.name}')
-            self.driver.delete_key_pair(self.key_pair)
+        try:
+            super().destroy()
+        finally:
+            if self._key_pair:
+                logger.info(f'Deleting temporary key pair: {self.key_pair.name}')
+                self.driver.delete_key_pair(self.key_pair)
 
     @TemporyNode.image.getter
     def image(self):

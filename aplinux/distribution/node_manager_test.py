@@ -284,9 +284,11 @@ class TestTemporyEC2Node(TestCase):
         self.node_manager.create()
         self.driver.import_key_pair_from_string.assert_called()
 
-    def test_destroy(self):
+    @patch('builtins.super')
+    def test_destroy(self, super):
         self.node_manager.key_pair = MagicMock()
         self.node_manager.destroy()
+        super().destroy.assert_called_with()
         self.driver.delete_key_pair.assert_called()
 
     def test_image(self):
