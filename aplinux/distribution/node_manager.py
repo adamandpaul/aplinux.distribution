@@ -32,6 +32,10 @@ class NodeManagerError(Exception):
     """A node manager generated error"""
 
 
+class NodeManagerErrorNoNode(NodeManagerError):
+    """A node manager generated error"""
+
+
 class NodeManagerCleanupError(NodeManagerError):
     """A failure in the cleanup of a node occured"""
 
@@ -172,8 +176,17 @@ class TemporyNode(object):
         self.image = image
         self.key_pair = key_pair
 
+    def _get_node_by_name(self, name):
+        """Utility method used for testing if a node already exists or for refreshing the current node"""
+        for node in self.driver.list_nodes():
+            if node.name == name:
+                return node
+        return None
+
     def create(self):
         """Starts the tempory node. Return once the node is considered running"""
+        assert self.name is not None and self.name.strip() != '', 'name must not be None or blank string'
+        assert self._get_node_by_name(self.name) is None, f'Node with the name {self.name} already exists'
         logger.info(f'Creating tempory {self.size} node from {self.image}: {self.name}')
         self.node = self.driver.create_node(name=self.name,
                                             size=self.size,
@@ -183,21 +196,17 @@ class TemporyNode(object):
 
     def refresh_node(self):
         """Refresh the node from the node's driver"""
-        if self.node is not None:
-            node_id = self.node.id
-            for node in self.node.driver.list_nodes():
-                if node.id == node_id:
-                    self.node = node
-                    return
-            self.node = None
+        self.node = self._get_node_by_name(self.name)
 
     def destroy(self):
         """Destroy the node, waiting for it to be terminated"""
-        if self.node is None:
-            logger.info(f'No tempory node to destroy')
-            return
-
         logger.info(f'Destroying tempory node: {self.name}')
+
+        if self.node is None:
+            self.refresh_node()
+
+        if self.node is None:
+            raise NodeManagerErrorNoNode('No node to destroy')
 
         # Atempt a destroy
         destroy_error = None
@@ -223,7 +232,16 @@ class TemporyNode(object):
 
     def __enter__(self):
         """Enter python context"""
-        self.create()
+        try:
+            self.create()
+        except Exception as e:
+            # sleep for a bit incase the destroy api is eventually consistant
+            time.sleep(3)
+            try:
+                self.destroy()
+            except NodeManagerErrorNoNode:
+                pass
+            raise e
         return self
 
     def __exit__(self, exc_type, ex_value, ex_tb):
