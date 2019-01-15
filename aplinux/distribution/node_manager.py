@@ -150,6 +150,10 @@ class TemporyNode(object):
                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
         return self._fabric
 
+    def invoke_shell(self, shell_command='/bin/bash -i -l'):
+        """Run an interactive shell for debugging purposes"""
+        self.fabric.run(shell_command, pty=True)
+
     def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', key_pair=None, **kwargs):
         """Initialize the tempory node manager.
 
