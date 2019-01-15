@@ -19,7 +19,7 @@ Python 3.6 installed on your system as well as the standard set of build tools.
 
        cd aplinx.distribution
 
-3. Run the bootstraping script substituting the location of the bin directory of your python installation::
+3. Run the bootstrapping script substituting the location of the bin directory of your python installation::
 
        PATH=/path/to/python3.6/bin:$PATH bin/bootstrap
 
@@ -29,8 +29,8 @@ Python 3.6 installed on your system as well as the standard set of build tools.
 
    This may take some time.
 
-Subsiquent builds can be acheived by running ``bin/build`` or ``bin/build -N`` if you want to use buildout's
-non-newest mode (this is faster for minor buildout or dependency changes becuase it uses cached buildout information)
+Subsequent builds can be achieved by running ``bin/build`` or ``bin/build -N`` if you want to use buildout's
+non-newest mode (this is faster for minor buildout or dependency changes because it uses cached buildout information)
 
 
 Development tools
@@ -43,7 +43,7 @@ Test runner:
     Tests will be auto discovered from files ending in ``_test.py``
 
     To run the more expensive integration tests which end in ``_inttest.py``
-    specifiy the integration test suite by running ``bin/test --test-suite integration_test_suite``
+    specify the integration test suite by running ``bin/test --test-suite integration_test_suite``
 
 Code quality tests:
     Run ``bin/code-analysis``. Be aware that this is also run as a git pre-commit
@@ -56,9 +56,9 @@ Test coverage reporting:
 The Application Environment/Stack
 =================================
 
-The built enviornment uses the ``zc.buildout`` package to:
+The built environment uses the ``zc.buildout`` package to:
 
-1. Check out source dependences
+1. Check out source dependencies
 
 2. Develop and install this repository as a python package
 
@@ -67,24 +67,24 @@ The built enviornment uses the ``zc.buildout`` package to:
 4. Build ConfigParser style python configuration files, for logging configuration and application
    configuration.
 
-5. Build stack running and monitoring tools and their configuration. Currently supdervisord is used.
+5. Build stack running and monitoring tools and their configuration. Currently supervisord is used.
 
-Various deployments/builds should be somewhat identical - only varing by confidential keys
+Various deployments/builds should be somewhat identical - only varying by confidential keys
 which may be injected into a production environment but each build has two modes of operating. The
 ``develop`` mode and the ``production`` mode. Mode specific scripts are built in the ``bin`` directory
-and are prefixed by ``develop-`` or ``production-`` respectivly. For python configuration there is also
-two ``.ini`` scripts which are built in the root diretory  ``develop.ini`` and ``production.ini``. These
+and are prefixed by ``develop-`` or ``production-`` respectively. For python configuration there are also
+two ``.ini`` scripts which are built in the root directory  ``develop.ini`` and ``production.ini``. These
 scripts should not be edited directly but modified using the buildout configuration by extending the sections
 ``[configuration]``, ``[develop.ini]`` or ``[production.ini]``.
 
 Generally speaking the develop environment uses self contained applications and is heavier to run, whilst
 the production environment will be dependent on other systems external to the buildout environment
 specified here. For example, the develop environment may use the postgresql built as part of the buildout,
-whilst the poroduction envionment may use the postgresql distributed with the operating system or provided
-by an external service. The reson behind this is that in a production environment externally managed services
-are often far better supported than applications built indiviually in an environment, whilst in a development
-environemnt security patches and uptime monitoring aren't needed but haveing multiple development
-environments co-exist togher is often required.
+whilst the production environment may use the postgresql distributed with the operating system or provided
+by an external service. The reason behind this is that in a production environment externally managed services
+are often far better supported than applications built individually in an environment, whilst in a development
+environment security patches and uptime monitoring aren't needed but having multiple development
+environments co-exist together is often required.
 
 
 Folder Contents

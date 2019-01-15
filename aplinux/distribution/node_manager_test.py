@@ -98,7 +98,7 @@ class TestSimpleTemporyNodePreStart(TestCase):
     def test_context_exit(self):
         self.node_manager.destroy = MagicMock()
         self.node_manager.__exit__(None, None, None)
-        self.node_manager.destroy.assert_not_called()
+        self.node_manager.destroy.assert_called()
 
 
 class TestSimpleTemporyNodeRunning(TestCase):
@@ -226,3 +226,72 @@ class TestTemporyGCENode(TestCase):
         image = self.node_manager.image
         self.driver.ex_get_image.assert_called_with('foo-bar-7-')
         self.assertEqual(image, expected_image)
+
+
+class TestTemporyEC2Node(TestCase):
+
+    def setUp(self):
+        self.driver = MagicMock()
+        self.node_manager_kwargs = {
+            'image': 'ami-9887c6e7',
+            'size': 't3.micro',
+        }
+        self.node_manager = node_manager.TemporyEC2Node(
+            self.driver,
+            **self.node_manager_kwargs,
+        )
+        t2_node = MagicMock()
+        self.t3_node = MagicMock()
+        self.t3_node.id = 't3.micro'
+        self.driver.list_sizes.return_value = [t2_node, self.t3_node]
+
+    def test_init(self):
+        self.assertEqual(
+            self.node_manager.create_kwargs['ex_blockdevicemappings'],
+            [
+                {
+                    'DeviceName': '/dev/sda1',
+                    'Ebs': {'DeleteOnTermination': True},
+                },
+            ],
+        )
+
+    def test_init_security_group_names(self):
+        kwargs = self.node_manager_kwargs.copy()
+        kwargs['security_group_names'] = 'test group'
+        new_node_manager = node_manager.TemporyEC2Node(self.driver, **kwargs)
+        self.assertEqual(
+            new_node_manager.create_kwargs['ex_security_groups'],
+            ['test group'],
+        )
+
+    def test_init_security_group_names_list(self):
+        kwargs = self.node_manager_kwargs.copy()
+        kwargs['security_group_names'] = 'test group|test group2'
+        new_node_manager = node_manager.TemporyEC2Node(self.driver, **kwargs)
+        self.assertEqual(
+            new_node_manager.create_kwargs['ex_security_groups'],
+            ['test group', 'test group2'],
+        )
+
+    @patch('time.sleep', return_value=None)
+    def test_create(self, patched_time_sleep):
+        self.node_manager.create()
+        self.driver.import_key_pair_from_string.assert_called()
+
+    def test_destroy(self):
+        self.node_manager.key_pair = MagicMock()
+        self.node_manager.destroy()
+        self.driver.delete_key_pair.assert_called()
+
+    def test_image(self):
+        expected_image = self.driver.get_image.return_value
+        image = self.node_manager.image
+        self.driver.get_image.assert_called_with('ami-9887c6e7')
+        self.assertEqual(image, expected_image)
+
+    def test_size(self):
+        expected_size = self.t3_node
+        size = self.node_manager.size
+        self.driver.list_sizes.assert_called()
+        self.assertEqual(size, expected_size)
