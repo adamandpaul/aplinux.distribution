@@ -18,10 +18,14 @@ from libcloud.compute.types import NodeState
 from paramiko.rsakey import RSAKey
 from retry import retry
 
+import code
 import fabric
 import logging
+import os
 import paramiko
+import sys
 import time
+import traceback
 import uuid
 
 
@@ -147,6 +151,7 @@ class TemporyNode(object):
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
             self._fabric = fabric.Connection(self.ip_address,
                                              user=self.user,
+                                             config=self.fabric_config,
                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
         return self._fabric
 
@@ -154,7 +159,8 @@ class TemporyNode(object):
         """Run an interactive shell for debugging purposes"""
         self.fabric.run(shell_command, pty=True)
 
-    def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', key_pair=None, **kwargs):
+    def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', key_pair=None,
+                 poison_pill_minutes=None, fabric_config_defaults=None, fabric_client_keepalive=60, **kwargs):
         """Initialize the tempory node manager.
 
         Instances are later created with the create() method. They are given the name name_prefix
@@ -174,6 +180,12 @@ class TemporyNode(object):
         self.user = user
         self.create_kwargs = kwargs
         self.node = None
+
+        # Setup fabric config
+        fabric_config_defaults = {**fabric.config.Config.global_defaults(),
+                                  **fabric_config_defaults}
+        self.fabric_config = fabric.config.Config(defaults=fabric_config_defaults)
+        self.fabric_client_keepalive = fabric_client_keepalive
 
         # set properties
         self.size = size
