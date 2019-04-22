@@ -4,6 +4,7 @@ from .node_manager import TemporyGCENode
 from invoke import task
 from datetime import datetime
 
+import code
 import json
 import logging
 import libcloud
@@ -50,3 +51,31 @@ def update(c):
     with TemporyGCENode(driver, fabric_config_defaults=c.fabric, **kwargs) as nm:
         fabfile.update(nm.fabric)
         nm.stop_and_create_image(new_image_name(c))
+
+
+@task
+def cli(c, tempory_node=False):
+    import fabfile
+    import tasks
+    driver = get_driver(c)
+    local = {'c': c,
+             'driver': driver,
+             'fabfile': fabfile,
+             'tasks': tasks,
+             'nm': None}
+    banner = '\n'.join(('cli available vars:',
+                        '    c: current invoke config',
+                        '    driver: libcloud driver from config',
+                        '    fabfile: fabfile module from fabfile.py',
+                        '    tasks: tasks module from tasks.py',
+                        '    nm: node manager if run with -t/--tempory-node'))
+    if tempory_node:
+        kwargs = {
+            **c.google_cloud.node_defaults,
+            **c.cli_node,
+        }
+        with TemporyGCENode(driver, **kwargs) as nm:
+            local['nm'] = nm
+            code.interact(banner=banner, local=local)
+    else:
+        code.interact(banner=banner, local=local)
