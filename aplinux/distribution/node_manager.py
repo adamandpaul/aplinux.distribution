@@ -183,6 +183,7 @@ class TemporyNode(object):
         self.node = None
 
         # Setup fabric config
+        fabric_config_defaults = fabric_config_defaults or {}
         fabric_config_defaults = {**fabric.config.Config.global_defaults(),
                                   **fabric_config_defaults}
         self.fabric_config = fabric.config.Config(defaults=fabric_config_defaults)
