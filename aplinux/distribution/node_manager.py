@@ -178,6 +178,7 @@ class TemporyNode(object):
         self.driver = driver
         self.name_prefix = name_prefix or 'tempory-node-'
         self.user = user
+        self.poison_pill_minutes = poison_pill_minutes
         self.create_kwargs = kwargs
         self.node = None
 
@@ -209,6 +210,10 @@ class TemporyNode(object):
                                             image=self.image,
                                             **self.create_kwargs)
         self.driver.wait_until_running([self.node])
+        self.wait_until_ready()
+        if self.poison_pill_minutes is not None:
+            self.poison_pill(minutes=self.poison_pill_minutes)
+        self.fabric.client.get_transport().set_keepalive(self.fabric_client_keepalive)
 
     def refresh_node(self):
         """Refresh the node from the node's driver"""
@@ -250,7 +255,12 @@ class TemporyNode(object):
         """Enter python context"""
         try:
             self.create()
-        except Exception as e:
+        except (BaseException) as e:  # we can use BaseException since we are re-raising it
+            traceback.print_exc()
+            if os.isatty(sys.stdout.fileno()):
+                code.interact(banner="About to destroy tempory instance due to erro. Interactive shell detected... nm is node manager",
+                              local={'nm': self})
+
             # sleep for a bit incase the destroy api is eventually consistant
             time.sleep(3)
             try:
@@ -262,13 +272,18 @@ class TemporyNode(object):
 
     def __exit__(self, exc_type, ex_value, ex_tb):
         """Exit context manager"""
+        if ex_value is not None:
+            traceback.print_exception(exc_type, ex_value, ex_tb)
+            if os.isatty(sys.stdout.fileno()):
+                code.interact(banner="About to destroy tempory instance due to erro. Interactive shell detected... nm is node manager",
+                              local={'nm': self})
         try:
             self.destroy()
         except Exception as e:
             raise NodeManagerCleanupError('An exception was raied during node deletion. Node left in unkonwn state') from e
 
-    def wait_untill_ready(self, tries=10, delay=0.5, backoff=1.5):
-        """Wait untill the node is able to accept fabric run commands
+    def wait_until_ready(self, tries=10, delay=0.5, backoff=1.5):
+        """Wait until the node is able to accept fabric run commands
 
         Args:
             timeout (int): The number of seconds to wait until raising an exception
@@ -303,6 +318,15 @@ class TemporyGCENode(TemporyNode):
         items = meta.setdefault('items', [])
         items.append({'key': 'ssh-keys',
                       'value': f'{self.user}:{self.key_pair.public_key}'})
+
+    def stop_and_create_image(self, image_name):
+        """Create an image from a machiene. In GCE the machiene must be stopped"""
+        driver = self.driver
+        logger.info('Stopping node')
+        driver.ex_stop_node(self.node)
+        volume = driver.ex_get_volume(self.name)
+        logger.info(f'Creating snapshot: {image_name}')
+        driver.ex_create_image(image_name, volume, wait_for_completion=True)
 
 
 class TemporyEC2Node(TemporyNode):
