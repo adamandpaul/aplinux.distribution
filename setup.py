@@ -26,6 +26,7 @@ setup(name='aplinux.distribution',
           'PyCrypto',
           'fabric',
           'retry',
+          'scp',
 
       ],
       entry_points="""

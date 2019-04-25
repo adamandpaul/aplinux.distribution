@@ -11,6 +11,8 @@ Creating a tempory instance such as::
 
 """
 
+from . import fabric
+from io import BytesIO
 from io import StringIO
 from libcloud.compute.base import KeyPair
 from libcloud.compute.types import LibcloudError
@@ -19,7 +21,6 @@ from paramiko.rsakey import RSAKey
 from retry import retry
 
 import code
-import fabric
 import logging
 import os
 import paramiko
@@ -149,10 +150,10 @@ class TemporyNode(object):
         if self._fabric is None and self.ip_address is not None:
             fin_private_key = StringIO(self.key_pair.private_key)
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            self._fabric = fabric.Connection(self.ip_address,
-                                             user=self.user,
-                                             config=self.fabric_config,
-                                             connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            self._fabric = fabric.ConnectionWithSCP(self.ip_address,
+                                                    user=self.user,
+                                                    config=self.fabric_config,
+                                                    connect_kwargs={'pkey': pkey, 'look_for_keys': False})
         return self._fabric
 
     def invoke_shell(self, shell_command='/bin/bash -i -l'):
@@ -160,7 +161,7 @@ class TemporyNode(object):
         self.fabric.run(shell_command, pty=True)
 
     def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', key_pair=None,
-                 poison_pill_minutes=None, fabric_config_defaults=None, fabric_client_keepalive=60, **kwargs):
+                 poison_pill_minutes=None, fabric_config_defaults=None, fabric_keepalive=60, **kwargs):
         """Initialize the tempory node manager.
 
         Instances are later created with the create() method. They are given the name name_prefix
@@ -187,7 +188,7 @@ class TemporyNode(object):
         fabric_config_defaults = {**fabric.config.Config.global_defaults(),
                                   **fabric_config_defaults}
         self.fabric_config = fabric.config.Config(defaults=fabric_config_defaults)
-        self.fabric_client_keepalive = fabric_client_keepalive
+        self.fabric_keepalive = fabric_keepalive
 
         # set properties
         self.size = size
@@ -214,7 +215,7 @@ class TemporyNode(object):
         self.wait_until_ready()
         if self.poison_pill_minutes is not None:
             self.poison_pill(minutes=self.poison_pill_minutes)
-        self.fabric.client.get_transport().set_keepalive(self.fabric_client_keepalive)
+        self.fabric.client.get_transport().set_keepalive(self.fabric_keepalive)
 
     def refresh_node(self):
         """Refresh the node from the node's driver"""
