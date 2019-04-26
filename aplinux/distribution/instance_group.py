@@ -2,12 +2,14 @@
 
 from datetime import datetime
 
+import logging
+
 
 logger = logging.getLogger('aplinux.distribution')
 
 
-@task
-def cycle_instance_group(driver, instance_group_name, **kwargs):
+def gce_cycle_instance_group(driver, instance_group_name, **kwargs):
+    kwawrgs = kwargs.copy()
 
     # Generate instance temlate name from instance group name and timestamp
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -20,8 +22,8 @@ def cycle_instance_group(driver, instance_group_name, **kwargs):
     # Read in a startup script from the filesystem
     if 'startup_script_path' in kwargs:
         startup_script = open(kwargs['startup_script_path'], 'r').read()
-        ex_metadata['items'].append({'key': 'startup-script',
-                                     'value': startup_script})
+        metadata['items'].append({'key': 'startup-script',
+                                  'value': startup_script})
         del kwargs['startup_script_path']  # remove this key from kwargs
 
     logger.info(f'Creating instance template {instance_template_name}')

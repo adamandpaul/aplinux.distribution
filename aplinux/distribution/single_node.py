@@ -8,6 +8,7 @@ logger = logging.getLogger('aplinux.distribution')
 
 
 def gce_cycle_node(driver, node_name, **kwargs):
+    kwargs = kwargs.copy()
 
     logger.info(f'Cycling {node_name}')
 
