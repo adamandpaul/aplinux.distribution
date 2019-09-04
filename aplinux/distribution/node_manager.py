@@ -156,11 +156,28 @@ class TemporyNode(object):
                                                     connect_kwargs={'pkey': pkey, 'look_for_keys': False})
         return self._fabric
 
-    def invoke_shell(self, shell_command='/bin/bash -i -l'):
-        """Run an interactive shell for debugging purposes"""
-        self.fabric.run(shell_command, pty=True)
+    _fabric_sudo_user = None
 
-    def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', key_pair=None,
+    @property
+    def fabric_sudo_user(self):
+        """Return a fabric connection object"""
+        if self._fabric_sudo_user is None and self.ip_address is not None:
+            fin_private_key = StringIO(self.key_pair.private_key)
+            pkey = paramiko.RSAKey.from_private_key(fin_private_key)
+            self._fabric_sudo_user = fabric.ConnectionWithSCP(self.ip_address,
+                                                              user=self.sudo_user,
+                                                              config=self.fabric_config,
+                                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+        return self._fabric_sudo_user
+
+    def invoke_shell(self, shell_command='/bin/bash -i -l', sudo_user=False):
+        """Run an interactive shell for debugging purposes"""
+        if sudo_user:
+            self.fabric_sudo_user.run(shell_command, pty=True)
+        else:
+            self.fabric.run(shell_command, pty=True)
+
+    def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', sudo_user='admin', key_pair=None,
                  poison_pill_minutes=None, fabric_config_defaults=None, fabric_keepalive=60, **kwargs):
         """Initialize the tempory node manager.
 
@@ -179,6 +196,7 @@ class TemporyNode(object):
         self.driver = driver
         self.name_prefix = name_prefix or 'tempory-node-'
         self.user = user
+        self.sudo_user = sudo_user
         self.poison_pill_minutes = poison_pill_minutes
         self.create_kwargs = kwargs
         self.node = None
@@ -215,7 +233,6 @@ class TemporyNode(object):
         self.wait_until_ready()
         if self.poison_pill_minutes is not None:
             self.poison_pill(minutes=self.poison_pill_minutes)
-        self.fabric.client.get_transport().set_keepalive(self.fabric_keepalive)
 
     def refresh_node(self):
         """Refresh the node from the node's driver"""
@@ -294,11 +311,12 @@ class TemporyNode(object):
         @retry(tries=tries, delay=delay, backoff=backoff)
         def test_connect():
             self.fabric.run('echo "hello"')
+            self.fabric_sudo_user.run('echo "hello again"')
         test_connect()
 
     def poison_pill(self, minutes=1440):
         """Shedules a VM shutdown after a given number of minutes"""
-        self.fabric.sudo(f'shutdown -h +{minutes}')
+        self.fabric_sudo_user.sudo(f'shutdown -h +{minutes}')
 
 
 class TemporyGCENode(TemporyNode):
@@ -318,8 +336,12 @@ class TemporyGCENode(TemporyNode):
         super().__init__(*args, **kwargs)
         meta = self.create_kwargs.setdefault('ex_metadata', {})
         items = meta.setdefault('items', [])
+        ssh_keys = []
+        for user_name in set([self.sudo_user, self.user]):
+            ssh_keys.append(f'{user_name}:{self.key_pair.public_key}')
+        ssh_keys = '\n'.join(ssh_keys)
         items.append({'key': 'ssh-keys',
-                      'value': f'{self.user}:{self.key_pair.public_key}'})
+	              'value': ssh_keys})
 
     def stop_and_create_image(self, image_name):
         """Create an image from a machiene. In GCE the machiene must be stopped"""
