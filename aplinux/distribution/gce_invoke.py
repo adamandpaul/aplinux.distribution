@@ -51,6 +51,18 @@ def update(c):
     with TemporyGCENode(driver, fabric_config_defaults=c.fabric, **kwargs) as nm:
         fabfile.update(nm.fabric)
         nm.stop_and_create_image(new_image_name(c))
+        
+
+@task
+def quick_update(c):
+    """Quickly Update an image"""
+    import fabfile
+    logger.info('Build an quickly updated image from the most recent image.')
+    driver = get_driver(c)
+    kwargs = {**c.google_cloud.node_defaults, **c.update_node}
+    with TemporyGCENode(driver, fabric_config_defaults=c.fabric, **kwargs) as nm:
+        fabfile.quick_update(nm.fabric)
+        nm.stop_and_create_image(new_image_name(c))
 
 
 @task
