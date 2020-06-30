@@ -150,13 +150,13 @@ class TemporyNode(object):
         if self._fabric is None and self.ip_address is not None:
             fin_private_key = StringIO(self.key_pair.private_key)
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            fabric = fabric.ConnectionWithSCP(self.ip_address,
-                                              user=self.user,
-                                              config=self.fabric_config,
-                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
-            fabric.open()
-            fabric.transport.set_keepalive(self.fabric_keepalive)
-            self._fabric = fabric
+            fabric_con = fabric.ConnectionWithSCP(self.ip_address,
+                                                  user=self.user,
+                                                  config=self.fabric_config,
+                                                  connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            fabric_con.open()
+            fabric_con.transport.set_keepalive(self.fabric_keepalive)
+            self._fabric = fabric_con
         return self._fabric
 
     _fabric_sudo_user = None
@@ -167,13 +167,13 @@ class TemporyNode(object):
         if self._fabric_sudo_user is None and self.ip_address is not None:
             fin_private_key = StringIO(self.key_pair.private_key)
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            fabric = fabric.ConnectionWithSCP(self.ip_address,
-                                              user=self.sudo_user,
-                                              config=self.fabric_config,
-                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
-            fabric.open()
-            fabric.transport.set_keepalive(self.fabric_keepalive)
-            self._fabric_sudo_user = fabric
+            fabric_con = fabric.ConnectionWithSCP(self.ip_address,
+                                                  user=self.sudo_user,
+                                                  config=self.fabric_config,
+                                                  connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            fabric_con.open()
+            fabric_con.transport.set_keepalive(self.fabric_keepalive)
+            self._fabric = fabric_con
         return self._fabric_sudo_user
 
     def invoke_shell(self, shell_command='/bin/bash -i -l', sudo_user=False):
