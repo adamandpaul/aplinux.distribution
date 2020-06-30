@@ -173,7 +173,7 @@ class TemporyNode(object):
                                                   connect_kwargs={'pkey': pkey, 'look_for_keys': False})
             fabric_con.open()
             fabric_con.transport.set_keepalive(self.fabric_keepalive)
-            self._fabric = fabric_con
+            self._fabric_sudo_user = fabric_con
         return self._fabric_sudo_user
 
     def invoke_shell(self, shell_command='/bin/bash -i -l', sudo_user=False):
