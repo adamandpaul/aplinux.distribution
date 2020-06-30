@@ -150,10 +150,13 @@ class TemporyNode(object):
         if self._fabric is None and self.ip_address is not None:
             fin_private_key = StringIO(self.key_pair.private_key)
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            self._fabric = fabric.ConnectionWithSCP(self.ip_address,
-                                                    user=self.user,
-                                                    config=self.fabric_config,
-                                                    connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            fabric = fabric.ConnectionWithSCP(self.ip_address,
+                                              user=self.user,
+                                              config=self.fabric_config,
+                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            fabric.open()
+            fabric.transport.set_keepalive(self.fabric_keepalive)
+            self._fabric = fabric
         return self._fabric
 
     _fabric_sudo_user = None
@@ -164,10 +167,13 @@ class TemporyNode(object):
         if self._fabric_sudo_user is None and self.ip_address is not None:
             fin_private_key = StringIO(self.key_pair.private_key)
             pkey = paramiko.RSAKey.from_private_key(fin_private_key)
-            self._fabric_sudo_user = fabric.ConnectionWithSCP(self.ip_address,
-                                                              user=self.sudo_user,
-                                                              config=self.fabric_config,
-                                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            fabric = fabric.ConnectionWithSCP(self.ip_address,
+                                              user=self.sudo_user,
+                                              config=self.fabric_config,
+                                              connect_kwargs={'pkey': pkey, 'look_for_keys': False})
+            fabric.open()
+            fabric.transport.set_keepalive(self.fabric_keepalive)
+            self._fabric_sudo_user = fabric
         return self._fabric_sudo_user
 
     def invoke_shell(self, shell_command='/bin/bash -i -l', sudo_user=False):
@@ -178,7 +184,7 @@ class TemporyNode(object):
             self.fabric.run(shell_command, pty=True)
 
     def __init__(self, driver, name_prefix=None, size=None, image=None, user='admin', sudo_user='admin', key_pair=None,
-                 poison_pill_minutes=None, fabric_config_defaults=None, fabric_keepalive=60, **kwargs):
+                 poison_pill_minutes=None, fabric_config_defaults=None, fabric_keepalive=5, **kwargs):
         """Initialize the tempory node manager.
 
         Instances are later created with the create() method. They are given the name name_prefix
