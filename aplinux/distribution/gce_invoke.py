@@ -42,6 +42,18 @@ def build(c):
 
 
 @task
+def init(c):
+    """Run only init on an image"""
+    import fabfile
+    logger.info('Build a fresh new image.')
+    driver = get_driver(c)
+    kwargs = {**c.google_cloud.node_defaults, **c.build_node}
+    with TemporyGCENode(driver, fabric_config_defaults=c.fabric, **kwargs) as nm:
+        fabfile.init(nm.fabric)
+        nm.stop_and_create_image(new_image_name(c))
+
+
+@task
 def update(c):
     """Update an image"""
     import fabfile
