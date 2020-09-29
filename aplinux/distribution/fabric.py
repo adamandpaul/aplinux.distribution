@@ -8,7 +8,11 @@ class ConnectionWithSCP(Connection):
 
     @property
     def scp(self):
-        return SCPClient(self.client.get_transport())
+        self.open()  # make sure we have an open connection
+        transport = self.client.get_transport()
+        if transport is None:
+            raise Exception("Was not able to acquire transport object from ssh client")
+        return SCPClient(transport)
 
     def put(self, src, dest):
         """Patch to addres a case where parameko fails to use an sftp socket
