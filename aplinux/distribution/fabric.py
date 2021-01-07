@@ -3,6 +3,7 @@
 from io import BytesIO
 from fabric import *
 from scp import SCPClient
+from uuid import uuid4
 
 class ConnectionWithSCP(Connection):
 
@@ -25,3 +26,11 @@ class ConnectionWithSCP(Connection):
             self.scp.putfo(src, dest)
         else:
             self.scp.put(src, dest)
+
+    def sudo_write(self, src, dest):
+        """An alternative to put that doesn't modify any existing meta or permissiosn info
+        on an existing file
+        """
+        temp_dest = f'/tmp/{uuid4()}'
+        self.put(src, temp_dest)
+        self.sudo(f"cat '{temp_dest}' > '{dest}'; rm '{temp_dest}'")
