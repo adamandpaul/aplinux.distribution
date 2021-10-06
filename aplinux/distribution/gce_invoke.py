@@ -78,6 +78,18 @@ def quick_update(c):
 
 
 @task
+def update_ssl(c):
+    """Update SSL certificates"""
+    import fabfile
+    logger.info('Update SSL certificate.')
+    driver = get_driver(c)
+    kwargs = {**c.google_cloud.node_defaults, **c.update_node}
+    with TemporyGCENode(driver, fabric_config_defaults=c.fabric, **kwargs) as nm:
+        fabfile.update_ssl(nm.fabric)
+        nm.stop_and_create_image(new_image_name(c))
+
+
+@task
 def cli(c, tempory_node=False):
     import fabfile
     import tasks
